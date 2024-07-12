@@ -18,7 +18,7 @@ Before running, experiment with your image to find the best values for:
 
 1. Run the script. It will prompt you to open an image. (Supports anything that Bio-Formats can open).
 2. In the dialog, specify the parameters.
-- Channels 1 and 2 are the channels to be analyzed. #1 becomes Neuron and #2 becomes Glioma in results table 
+- Channels 1 and 2 are the channels to be analyzed. (In original script, #1 becomes Neuron and #2 becomes Glioma in results table) 
 - radius background is used for rolling ball background subtraction – establish this first in the IJ command (pixel units) 
 - sigma smaller and larger are the smallest and largest objects expected (pixel units) 
 - min peak value is the height  
@@ -36,4 +36,5 @@ Before running, experiment with your image to find the best values for:
 ## Credits
 
 Original by Cedric Espenel, Stanford University
+
 Modified by Theresa Swayne, Columbia University
