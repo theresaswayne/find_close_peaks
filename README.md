@@ -18,15 +18,15 @@ Before running, experiment with your image to find the best values for:
 
 1. Run the script. It will prompt you to open an image. (Supports anything that Bio-Formats can open).
 2. In the dialog, specify the parameters.
--- Channels 1 and 2 are the channels to be analyzed. #1 becomes Neuron and #2 becomes Glioma in results table 
--- radius background is used for rolling ball background subtraction – establish this first in the IJ command (pixel units) 
--- sigma smaller and larger are the smallest and largest objects expected (pixel units) 
--- min peak value is the height  
--- min dist is the distance in pixels that counts as colocalized 
+-Channels 1 and 2 are the channels to be analyzed. #1 becomes Neuron and #2 becomes Glioma in results table 
+-radius background is used for rolling ball background subtraction – establish this first in the IJ command (pixel units) 
+-sigma smaller and larger are the smallest and largest objects expected (pixel units) 
+-min peak value is the height  
+-min dist is the distance in pixels that counts as colocalized 
 3. Output (displayed in IJ, not saved, but you can save if you want): 
---Summary table of results  
---Point ROIs representing the 2 classes of puncta, plus the “touching” (within distance criterion) puncta. The 2 “touching” ROIs are not always equivalent, e.g. if there are 2 closely spaced puncta in 1 channel that are both close to the same point in another. 
---Images of each relevant channel, projected (if applicable) and background subtracted
+-Summary table of results  
+-Point ROIs representing the 2 classes of puncta, plus the “touching” (within distance criterion) puncta. The 2 “touching” ROIs are not always equivalent, e.g. if there are 2 closely spaced puncta in 1 channel that are both close to the same point in another. 
+-Images of each relevant channel, projected (if applicable) and background subtracted
 
 ## Batch version (batch)
 1. Run the script. It will prompt you for input and output directories.
