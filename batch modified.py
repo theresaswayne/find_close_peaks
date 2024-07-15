@@ -5,7 +5,7 @@
 #@ boolean (label = "Keep directory structure when saving", value = true) keepDirectories
 
 # https://github.com/bioimage-analysis/find_close_peaks by Cedric Espenel, Stanford University
-# updated by Theresa Swayne, Columbia University, 2022
+# updated by Theresa Swayne, Columbia University, 2022 and 2024
 # Supports different peak height by channel
 # Saves results and log separately, plus ROI manager point selections
 
@@ -31,18 +31,20 @@ from loci.plugins import BF
 def distance(peak_1, peak_2):
 	return sqrt((peak_2[1] - peak_1[1]) * (peak_2[1] - peak_1[1]) + (peak_2[0] - peak_1[0]) * (peak_2[0] - peak_1[0]))
 
-# edited for Xu Zhang's defaults
-def getOptions():
+# edited for Alondra Burguete's defaults
+
+def getOptions(): # in pixels
 	gd = GenericDialog("Options")
-	gd.addNumericField("Channel_1", 4, 0)
-	gd.addNumericField("Channel_2", 3, 0)
-	gd.addNumericField("radius_background", 20, 0)
- 	gd.addNumericField("sigmaSmaller", 2, 0)
- 	gd.addNumericField("sigmaLarger", 9, 0)
-  	gd.addNumericField("minPeakValueCh1", 300, 0)
-  	gd.addNumericField("minPeakValueCh2", 600, 0)
-  	gd.addNumericField("min_dist", 10, 0)
+	gd.addNumericField("Ch1 (FUS)", 4, 0)
+	gd.addNumericField("Ch2 (DNAJB6)", 3, 0)
+	gd.addNumericField("radius_background", 100, 0)
+ 	gd.addNumericField("sigmaSmaller", 3, 0)
+ 	gd.addNumericField("sigmaLarger", 10, 0)
+  	gd.addNumericField("minPeakValueCh1", 80, 0)
+  	gd.addNumericField("minPeakValueCh2", 40, 0)
+  	gd.addNumericField("min_dist", 1, 0)
   	gd.showDialog()
+
 	Channel_1 = gd.getNextNumber()
 	Channel_2 = gd.getNextNumber()
 	radius_background = gd.getNextNumber()
@@ -63,8 +65,8 @@ def extract_channel(imp_max, Channel_1, Channel_2):
 	ch_2 = ImageStack(imp_max.width, imp_max.height)
 	ch_2.addSlice(str(Channel_2), stack.getProcessor(Channel_2))
 
-	ch1 = ImagePlus("Neuron" + str(Channel_1), ch_1)
-	ch2 = ImagePlus("Glioma" + str(Channel_2), ch_2)
+	ch1 = ImagePlus("FUS" + str(Channel_1), ch_1)
+	ch2 = ImagePlus("DNAJB6" + str(Channel_2), ch_2)
 
 	ch1_1 = ch1.duplicate()
 	ch2_1 = ch2.duplicate()
@@ -90,12 +92,12 @@ def find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakVa
 	# sigmaSmaller ==> Size of the smaller dots (in pixels)
 	# sigmaLarger ==> Size of the bigger dots (in pixels)
 	# minPeakValue ==> Intensity above which to look for dots
-	# Preparation Neuron channel
+	# Preparation FUS channel
 	ip1_1 = IL.wrapReal(imp1)
 	ip1E = Views.extendMirrorSingle(ip1_1)
 	imp1.show()
 
-	#Preparation Glioma channel
+	#Preparation DNAJB6 channel
 	ip2_1 = IL.wrapReal(imp2)
 	ip2E = Views.extendMirrorSingle(ip2_1)
 	imp2.show()
@@ -194,10 +196,10 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 
 	table = ResultsTable()
 	table.incrementCounter()
-	table.addValue("Numbers of Neuron Markers", roi_1.getCount(0))
-	table.addValue("Numbers of Glioma Markers", roi_2.getCount(0))
-	table.addValue("Numbers of Glioma within %s um of Neurons" %(min_distance), roi_3.getCount(0))
-	table.addValue("Numbers of Neurons within %s um of Glioma" %(min_distance), roi_4.getCount(0))
+	table.addValue("Numbers of FUS Markers", roi_1.getCount(0))
+	table.addValue("Numbers of DNAJB6 Markers", roi_2.getCount(0))
+	table.addValue("Numbers of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
+	table.addValue("Numbers of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
 	#table.show("Results Analysis")
 	saveDir = currentDir.replace(srcDir, dstDir) if keepDirectories else dstDir
 	if not os.path.exists(saveDir):
@@ -219,19 +221,19 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	rm.addRoi(roi_4)
 
 	rm.select(0)
-	rm.rename(0, "ROI neuron")
+	rm.rename(0, "ROI FUS")
 	rm.runCommand("Set Color", "yellow")
 
 	rm.select(1)
-	rm.rename(1, "ROI glioma")
+	rm.rename(1, "ROI DNAJB6")
 	rm.runCommand("Set Color", "blue")
 
 	rm.select(2)
-	rm.rename(2, "ROI glioma touching neurons")
+	rm.rename(2, "ROI DNAJB6 touching FUS")
 	rm.runCommand("Set Color", "red")
 
 	rm.select(3)
-	rm.rename(3, "ROI neurons touching glioma")
+	rm.rename(3, "ROI FUS touching DNAJB6")
 	rm.runCommand("Set Color", "green")
 
 	rm.runCommand(imp1, "Show All")
