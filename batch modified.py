@@ -1,6 +1,6 @@
 #@ File    (label = "Input directory", style = "directory") srcFile
 #@ File    (label = "Output directory", style = "directory") dstFile
-#@ String  (label = "File extension", value=".nd2") ext
+#@ String  (label = "File extension", value=".czi") ext
 #@ String  (label = "File name contains", value = "") containString
 #@ boolean (label = "Keep directory structure when saving", value = true) keepDirectories
 

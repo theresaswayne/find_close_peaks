@@ -1,3 +1,6 @@
+# Usage: Run plugin and open input image when prompted.
+# Output will be displayed.
+
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
 from ij.plugin.filter import RankFilters
@@ -18,15 +21,17 @@ def distance(peak_1, peak_2):
 	return sqrt((peak_2[1] - peak_1[1]) * (peak_2[1] - peak_1[1]) + (peak_2[0] - peak_1[0]) * (peak_2[0] - peak_1[0]))
 
 # edited for Alondra Burguete's defaults
+# Supports different peak height by channel
 
 def getOptions(): # in pixels
 	gd = GenericDialog("Options")
-	gd.addNumericField("FUS", 4, 0)
-	gd.addNumericField("DNAJB6", 3, 0)
+	gd.addNumericField("Channel for FUS", 4, 0)
+	gd.addNumericField("Channel for DNAJB6", 3, 0)
 	gd.addNumericField("radius_background", 100, 0)
  	gd.addNumericField("sigmaSmaller", 3, 0)
  	gd.addNumericField("sigmaLarger", 10, 0)
-  	gd.addNumericField("minPeakValue", 80, 0)
+  	gd.addNumericField("minPeakValue FUS", 80, 0)
+  	gd.addNumericField("minPeakValue DNAJB6", 40, 0)
   	gd.addNumericField("min_dist", 1, 0)
   	gd.showDialog()
 	Channel_1 = gd.getNextNumber()
@@ -34,10 +39,11 @@ def getOptions(): # in pixels
 	radius_background = gd.getNextNumber()
   	sigmaSmaller = gd.getNextNumber()
   	sigmaLarger = gd.getNextNumber()
-  	minPeakValue = gd.getNextNumber()
+  	minPeakValueCh1 = gd.getNextNumber()
+  	minPeakValueCh2 = gd.getNextNumber()
   	min_dist = gd.getNextNumber()
 
-  	return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValue, min_dist
+  	return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
 
 def extract_channel(imp_max, Channel_1, Channel_2):
 
@@ -72,11 +78,12 @@ def back_subtraction(ip1, ip2, radius_background):
 	IJ.run(imp2, "Enhance Contrast", "saturated=0.35")
 	return imp1, imp2
 
-def find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValue):
+def find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2):
 	# FIND PEAKS
 	# sigmaSmaller ==> Size of the smaller dots (in pixels)
 	# sigmaLarger ==> Size of the bigger dots (in pixels)
 	# minPeakValue ==> Intensity above which to look for dots
+	
 	# Preparation FUS channel
 	ip1_1 = IL.wrapReal(imp1)
 	ip1E = Views.extendMirrorSingle(ip1_1)
@@ -92,10 +99,10 @@ def find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValue):
 	normalizedMinPeakValue = False
 
 	dog_1 = DogDetection(ip1E, ip1_1, calibration, sigmaSmaller, sigmaLarger,
-	  				   extremaType, minPeakValue, normalizedMinPeakValue)
+	  				   extremaType, minPeakValueCh1, normalizedMinPeakValue)
 
 	dog_2 = DogDetection(ip2E, ip2_1, calibration, sigmaSmaller, sigmaLarger,
-	  				   extremaType, minPeakValue, normalizedMinPeakValue)
+	  				   extremaType, minPeakValueCh2, normalizedMinPeakValue)
 
 	peaks_1 = dog_1.getPeaks()
 	peaks_2 = dog_2.getPeaks()
@@ -113,15 +120,16 @@ def run():
 	imp = IJ.getImage()
 
 
-	Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValue, min_dist = getOptions()
+	Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
 
-	IJ.log("option used:" \
+	IJ.log("options used:" \
     		+ "\n" + "channel 1:" + str(Channel_1) \
     		+ "\n" + "channel 2:"+ str(Channel_2) \
     		+ "\n" + "Radius Background:"+ str(radius_background) \
     		+ "\n" + "Smaller Sigma:"+ str(sigmaSmaller) \
     		+ "\n" + "Larger Sigma:"+str(sigmaLarger) \
-    		+ "\n" + "Min Peak Value:"+str(minPeakValue) \
+    		+ "\n" + "Min Peak Value Ch1:"+str(minPeakValueCh1) \
+			+ "\n" + "Min Peak Value Ch2:"+str(minPeakValueCh2) \
     		+ "\n" + "Min dist between peaks:"+str(min_dist))
 
 	IJ.log("Computing Max Intensity Projection")
@@ -140,7 +148,7 @@ def run():
 
 	IJ.log("Finding Peaks")
 
-	ip1_1, ip2_1, peaks_1, peaks_2 = find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValue)
+	ip1_1, ip2_1, peaks_1, peaks_2 = find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2)
 
 	# Create a PointRoi from the DoG peaks, for visualization
 	roi_1 = PointRoi(0, 0)
@@ -163,10 +171,7 @@ def run():
 	  peak.localize(p_2)
 	  roi_2.addPoint(imp2, p_2[0], p_2[1])
 
-	# Chose minimum distance in pixel
-	#min_dist = 20
-
-# updated to correct the peak set
+# TS updated to correct the peak set
 	for peak_1 in peaks_1:
 		peak_1.localize(p_1)
 		for peak_2 in peaks_2:
@@ -225,6 +230,6 @@ def run():
 	table.addValue("Numbers of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
 	table.addValue("Numbers of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
 
-	table.show("Results Analysis")
+	table.show("Results of Analysis")
 
 run()
