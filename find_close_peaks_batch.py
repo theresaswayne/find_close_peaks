@@ -211,7 +211,7 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	IJ.log("Saving to" + saveDir)
 	table.save(os.path.join(saveDir, fileName + "_Results.csv"))
   	IJ.selectWindow("Log")
-  	IJ.saveAs("Text", os.path.join(saveDir, "Peaks_Log.csv"));
+  	IJ.saveAs("Text", os.path.join(saveDir, "Peaks_Log.txt"));
 
 	# save ROIs
 	rm = RoiManager.getInstance()
@@ -243,9 +243,9 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	rm.runCommand(imp1, "Show All")
 	
 	rm.runCommand("Deselect")
-	sel = rm.selected()
-	tot = rm.getCount()
-	IJ.log(str(sel) + " ROIs selected out of " + str(tot))
+	#sel = rm.selected()
+	#tot = rm.getCount()
+	#IJ.log(str(sel) + " ROIs selected out of " + str(tot))
 	rm.save(os.path.join(saveDir, fileName + "_rois.zip"))
 	#rm.runCommand("save selected", os.path.join(folder, "temp.zip"))
 
