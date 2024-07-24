@@ -1,10 +1,12 @@
 # Usage: Run plugin and open input image when prompted.
 # Output will be displayed.
+# KNOWN ISSUES: An erroneous peak is always identified at (0,0)
+# TODO: User entry of label names
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
 from ij.plugin.filter import RankFilters
-from ij.plugin.filter import BackgroundSubtracter
+# from ij.plugin.filter import BackgroundSubtracter
 import net.imagej.ops
 from net.imglib2.view import Views
 from net.imglib2.img.display.imagej import ImageJFunctions as IL
@@ -25,25 +27,26 @@ def distance(peak_1, peak_2):
 
 def getOptions(): # in pixels
 	gd = GenericDialog("Options")
-	gd.addNumericField("Channel for FUS", 4, 0)
-	gd.addNumericField("Channel for DNAJB6", 3, 0)
-	gd.addNumericField("radius_background", 100, 0)
+	gd.addNumericField("Channel for FUS", 3, 0)
+	gd.addNumericField("Channel for DNAJB6", 2, 0)
+	#gd.addNumericField("radius_background", 100, 0)
  	gd.addNumericField("sigmaSmaller", 3, 0)
  	gd.addNumericField("sigmaLarger", 10, 0)
-  	gd.addNumericField("minPeakValue FUS", 80, 0)
-  	gd.addNumericField("minPeakValue DNAJB6", 40, 0)
+  	gd.addNumericField("minPeakValue FUS", 40, 0)
+  	gd.addNumericField("minPeakValue DNAJB6", 15, 0)
   	gd.addNumericField("min_dist", 1, 0)
   	gd.showDialog()
 	Channel_1 = gd.getNextNumber()
 	Channel_2 = gd.getNextNumber()
-	radius_background = gd.getNextNumber()
+	#radius_background = gd.getNextNumber()
   	sigmaSmaller = gd.getNextNumber()
   	sigmaLarger = gd.getNextNumber()
   	minPeakValueCh1 = gd.getNextNumber()
   	minPeakValueCh2 = gd.getNextNumber()
   	min_dist = gd.getNextNumber()
 
-  	return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
+  	# return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
+	return int(Channel_1), int(Channel_2), sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
 
 def extract_channel(imp_max, Channel_1, Channel_2):
 
@@ -120,12 +123,14 @@ def run():
 	imp = IJ.getImage()
 
 
-	Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+	#Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+	Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+	
 
 	IJ.log("options used:" \
     		+ "\n" + "channel 1:" + str(Channel_1) \
     		+ "\n" + "channel 2:"+ str(Channel_2) \
-    		+ "\n" + "Radius Background:"+ str(radius_background) \
+    		# + "\n" + "Radius Background:"+ str(radius_background) \
     		+ "\n" + "Smaller Sigma:"+ str(sigmaSmaller) \
     		+ "\n" + "Larger Sigma:"+str(sigmaLarger) \
     		+ "\n" + "Min Peak Value Ch1:"+str(minPeakValueCh1) \
@@ -142,7 +147,9 @@ def run():
 		imp_max = imp
 
 	ip1, ip2 = extract_channel(imp_max, Channel_1, Channel_2)
-	imp1, imp2 = back_subtraction(ip1, ip2, radius_background)
+	imp1 = ImagePlus("ch1", ip1)
+	imp2 = ImagePlus("ch2", ip2)
+	# imp1, imp2 = back_subtraction(ip1, ip2, radius_background)
 	imp1.show()
 	imp2.show()
 

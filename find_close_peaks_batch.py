@@ -9,6 +9,9 @@
 # Supports different peak height by channel
 # Saves results and log separately, plus ROI manager point selections
 
+# KNOWN ISSUES: An erroneous peak is always identified at (0,0)
+# TODO: User entry of label names
+
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
