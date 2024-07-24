@@ -11,7 +11,7 @@ import net.imagej.ops
 from net.imglib2.view import Views
 from net.imglib2.img.display.imagej import ImageJFunctions as IL
 from net.imglib2.algorithm.dog import DogDetection
-from ij.gui import PointRoi
+from ij.gui import Roi, PointRoi
 from jarray import zeros
 from ij.measure import ResultsTable
 from math import sqrt
@@ -31,7 +31,7 @@ def getOptions(): # in pixels
 	gd.addNumericField("Channel for DNAJB6", 2, 0)
 	#gd.addNumericField("radius_background", 100, 0)
  	gd.addNumericField("sigmaSmaller", 3, 0)
- 	gd.addNumericField("sigmaLarger", 10, 0)
+ 	gd.addNumericField("sigmaLarger", 18, 0)
   	gd.addNumericField("minPeakValue FUS", 40, 0)
   	gd.addNumericField("minPeakValue DNAJB6", 15, 0)
   	gd.addNumericField("min_dist", 1, 0)
@@ -178,7 +178,12 @@ def run():
 	  peak.localize(p_2)
 	  roi_2.addPoint(imp2, p_2[0], p_2[1])
 
-# TS updated to correct the peak set
+
+
+	
+	# Check for close peaks
+	
+	# TS updated to correct the peak set
 	for peak_1 in peaks_1:
 		peak_1.localize(p_1)
 		for peak_2 in peaks_2:
@@ -198,6 +203,7 @@ def run():
 				roi_4.addPoint(imp1, p_2[0], p_2[1])
 				break
 
+	
 	rm = RoiManager.getInstance()
 	if not rm:
 	  rm = RoiManager()
@@ -232,10 +238,10 @@ def run():
 
 	table = ResultsTable()
 	table.incrementCounter()
-	table.addValue("Numbers of FUS Markers", roi_1.getCount(0))
-	table.addValue("Numbers of DNAJB6 Markers", roi_2.getCount(0))
-	table.addValue("Numbers of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
-	table.addValue("Numbers of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
+	table.addValue("Number of FUS Markers", roi_1.getCount(0))
+	table.addValue("Number of DNAJB6 Markers", roi_2.getCount(0))
+	table.addValue("Number of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
+	table.addValue("Number of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
 
 	table.show("Results of Analysis")
 

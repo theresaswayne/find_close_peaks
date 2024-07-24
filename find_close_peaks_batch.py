@@ -10,7 +10,7 @@
 # Saves results and log separately, plus ROI manager point selections
 
 # KNOWN ISSUES: An erroneous peak is always identified at (0,0)
-# TODO: User entry of label names, option for background subtraction, merge csv files, single log (save once at end), remove 0,0 point
+# TODO: User entry of label names, option for background subtraction, merge csv files
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
@@ -37,13 +37,13 @@ def distance(peak_1, peak_2):
 
 def getOptions(): # in pixels
 	gd = GenericDialog("Options")
-	gd.addNumericField("Ch1 (FUS)", 4, 0)
-	gd.addNumericField("Ch2 (DNAJB6)", 3, 0)
+	gd.addNumericField("Ch1 (FUS)", 3, 0)
+	gd.addNumericField("Ch2 (DNAJB6)", 2, 0)
 	#gd.addNumericField("radius_background", 100, 0)
  	gd.addNumericField("sigmaSmaller", 3, 0)
- 	gd.addNumericField("sigmaLarger", 10, 0)
-  	gd.addNumericField("minPeakValueCh1", 80, 0)
-  	gd.addNumericField("minPeakValueCh2", 40, 0)
+ 	gd.addNumericField("sigmaLarger", 18, 0)
+  	gd.addNumericField("minPeakValueCh1", 40, 0)
+  	gd.addNumericField("minPeakValueCh2", 15, 0)
   	gd.addNumericField("min_dist", 1, 0)
   	gd.showDialog()
 
@@ -169,14 +169,12 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	  # Read peak coordinates into an array of integers
 	  peak.localize(p_1)
 	  roi_1.addPoint(imp1, p_1[0], p_1[1])
+	
 
 	for peak in peaks_2:
 	  # Read peak coordinates into an array of integers
 	  peak.localize(p_2)
 	  roi_2.addPoint(imp2, p_2[0], p_2[1])
-
-	# Chose minimum distance in pixel
-	#min_dist = 20
 
 	for peak_1 in peaks_1:
 		peak_1.localize(p_1)
@@ -202,10 +200,10 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 
 	table = ResultsTable()
 	table.incrementCounter()
-	table.addValue("Numbers of FUS Markers", roi_1.getCount(0))
-	table.addValue("Numbers of DNAJB6 Markers", roi_2.getCount(0))
-	table.addValue("Numbers of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
-	table.addValue("Numbers of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
+	table.addValue("Number of FUS Markers", roi_1.getCount(0))
+	table.addValue("Number of DNAJB6 Markers", roi_2.getCount(0))
+	table.addValue("Number of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
+	table.addValue("Number of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
 	#table.show("Results of Analysis")
 	saveDir = currentDir.replace(srcDir, dstDir) if keepDirectories else dstDir
 	if not os.path.exists(saveDir):
@@ -213,7 +211,7 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	IJ.log("Saving to" + saveDir)
 	table.save(os.path.join(saveDir, fileName + "_Results.csv"))
 	IJ.selectWindow("Log")
-	IJ.saveAs("Text", os.path.join(saveDir, fileName + "_Log.csv"));
+
 	
 	# save ROIs
 	rm = RoiManager.getInstance()
@@ -283,5 +281,6 @@ def run():
       #process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
       process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
 
+  IJ.saveAs("Text", os.path.join(saveDir, "Peaks_Log.csv"));
 
 run()
