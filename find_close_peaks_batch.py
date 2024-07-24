@@ -10,7 +10,7 @@
 # Saves results and log separately, plus ROI manager point selections
 
 # KNOWN ISSUES: An erroneous peak is always identified at (0,0)
-# TODO: User entry of label names, option for background subtraction, merge csv files
+# TODO: User entry of label names, option for background subtraction, merge csv files, save single log
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
@@ -210,9 +210,9 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 		os.makedirs(saveDir)
 	IJ.log("Saving to" + saveDir)
 	table.save(os.path.join(saveDir, fileName + "_Results.csv"))
-	IJ.selectWindow("Log")
+  	IJ.selectWindow("Log")
+  	IJ.saveAs("Text", os.path.join(saveDir, "Peaks_Log.csv"));
 
-	
 	# save ROIs
 	rm = RoiManager.getInstance()
 	if not rm:
@@ -281,6 +281,6 @@ def run():
       #process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
       process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
 
-  IJ.saveAs("Text", os.path.join(saveDir, "Peaks_Log.csv"));
+
 
 run()
