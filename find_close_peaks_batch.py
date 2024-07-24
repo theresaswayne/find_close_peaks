@@ -10,13 +10,12 @@
 # Saves results and log separately, plus ROI manager point selections
 
 # KNOWN ISSUES: An erroneous peak is always identified at (0,0)
-# TODO: User entry of label names
-
+# TODO: User entry of label names, option for background subtraction, merge csv files, single log (save once at end), remove 0,0 point
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
 from ij.plugin.filter import RankFilters
-from ij.plugin.filter import BackgroundSubtracter
+# from ij.plugin.filter import BackgroundSubtracter
 import net.imagej.ops
 from net.imglib2.view import Views
 from net.imglib2.img.display.imagej import ImageJFunctions as IL
@@ -40,7 +39,7 @@ def getOptions(): # in pixels
 	gd = GenericDialog("Options")
 	gd.addNumericField("Ch1 (FUS)", 4, 0)
 	gd.addNumericField("Ch2 (DNAJB6)", 3, 0)
-	gd.addNumericField("radius_background", 100, 0)
+	#gd.addNumericField("radius_background", 100, 0)
  	gd.addNumericField("sigmaSmaller", 3, 0)
  	gd.addNumericField("sigmaLarger", 10, 0)
   	gd.addNumericField("minPeakValueCh1", 80, 0)
@@ -50,14 +49,15 @@ def getOptions(): # in pixels
 
 	Channel_1 = gd.getNextNumber()
 	Channel_2 = gd.getNextNumber()
-	radius_background = gd.getNextNumber()
+	#radius_background = gd.getNextNumber()
   	sigmaSmaller = gd.getNextNumber()
   	sigmaLarger = gd.getNextNumber()
   	minPeakValueCh1 = gd.getNextNumber()
   	minPeakValueCh2 = gd.getNextNumber()
   	min_dist = gd.getNextNumber()
 
-  	return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
+  	#return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
+  	return int(Channel_1), int(Channel_2), sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
 
 def extract_channel(imp_max, Channel_1, Channel_2):
 
@@ -121,7 +121,8 @@ def find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakVa
 	return ip1_1, ip2_1, peaks_1, peaks_2
 
 
-def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist):
+#def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist):
+def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist):
  	IJ.run("Close All", "")
 
  	# Opening the image
@@ -142,10 +143,12 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 
 	ip1, ip2 = extract_channel(imp_max, Channel_1, Channel_2)
 
-	IJ.log("Subtract background")
+	#IJ.log("Subtract background")
 
-	imp1, imp2 = back_subtraction(ip1, ip2, radius_background)
-
+	#imp1, imp2 = back_subtraction(ip1, ip2, radius_background)
+	imp1 = ImagePlus("ch1", ip1)
+	imp2 = ImagePlus("ch2", ip2)
+	
 	IJ.log("Finding Peaks")
 
 	ip1_1, ip2_1, peaks_1, peaks_2 = find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2)
@@ -155,7 +158,7 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	roi_2 = PointRoi(0, 0)
 	roi_3 = PointRoi(0, 0)
 	roi_4 = PointRoi(0, 0)
-
+	
 	# A temporary array of integers, one per dimension the image has
 	p_1 = zeros(ip1_1.numDimensions(), 'i')
 	p_2 = zeros(ip2_1.numDimensions(), 'i')
@@ -203,7 +206,7 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 	table.addValue("Numbers of DNAJB6 Markers", roi_2.getCount(0))
 	table.addValue("Numbers of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
 	table.addValue("Numbers of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
-	#table.show("Results Analysis")
+	#table.show("Results of Analysis")
 	saveDir = currentDir.replace(srcDir, dstDir) if keepDirectories else dstDir
 	if not os.path.exists(saveDir):
 		os.makedirs(saveDir)
@@ -254,13 +257,15 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories, Channel_1, Ch
 def run():
   srcDir = srcFile.getAbsolutePath()
   dstDir = dstFile.getAbsolutePath()
-  Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+  #Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+  Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+  
   IJ.log("\\Clear")
   IJ.log("Processing batch Find_close_peaks")
-  IJ.log("option used:" \
+  IJ.log("options used:" \
   		+ "\n" + "channel 1:" + str(Channel_1) \
   		+ "\n" + "channel 2:"+ str(Channel_2) \
-  		+ "\n" + "Radius Background:"+ str(radius_background) \
+  		# + "\n" + "Radius Background:"+ str(radius_background) \
   		+ "\n" + "Smaller Sigma:"+ str(sigmaSmaller) \
   		+ "\n" + "Larger Sigma:"+str(sigmaLarger) \
   		+ "\n" + "Min Peak Value for channel 1:"+str(minPeakValueCh1) \
@@ -275,7 +280,8 @@ def run():
       # Check for file name pattern
       if containString not in filename:
         continue
-      process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
+      #process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
+      process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
 
 
 run()

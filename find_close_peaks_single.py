@@ -1,7 +1,7 @@
 # Usage: Run plugin and open input image when prompted.
 # Output will be displayed.
 # KNOWN ISSUES: An erroneous peak is always identified at (0,0)
-# TODO: User entry of label names
+# TODO: User entry of label names, option for background subtraction
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
