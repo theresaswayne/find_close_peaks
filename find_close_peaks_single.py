@@ -1,7 +1,8 @@
 # Usage: Run plugin and open input image when prompted.
 # Output will be displayed.
 # KNOWN ISSUES: An erroneous peak is always identified at (0,0)
-# TODO: User entry of label names, option for background subtraction
+# TODO: option for background subtraction
+
 
 from ij import IJ, ImagePlus, ImageStack
 from ij.plugin import ZProjector
@@ -27,15 +28,19 @@ def distance(peak_1, peak_2):
 
 def getOptions(): # in pixels
 	gd = GenericDialog("Options")
-	gd.addNumericField("Channel for FUS", 3, 0)
-	gd.addNumericField("Channel for DNAJB6", 2, 0)
+	gd.addStringField("Name of first channel: ", "FUS");
+	gd.addStringField("Name of second channel: ", "DNAJB6");
+	gd.addNumericField("Channel number for first channel", 3, 0)
+	gd.addNumericField("Channel number for second channel", 2, 0)
 	#gd.addNumericField("radius_background", 100, 0)
- 	gd.addNumericField("sigmaSmaller", 3, 0)
- 	gd.addNumericField("sigmaLarger", 18, 0)
-  	gd.addNumericField("minPeakValue FUS", 40, 0)
-  	gd.addNumericField("minPeakValue DNAJB6", 15, 0)
-  	gd.addNumericField("min_dist", 1, 0)
+ 	gd.addNumericField("Min peak width (sigma) in calibrated units", 0.5, 1)
+ 	gd.addNumericField("Max peak width (sigma) in calibrated units", 5.0, 1)
+  	gd.addNumericField("minPeakValue first channel", 40, 0)
+  	gd.addNumericField("minPeakValue second channel", 15, 0)
+  	gd.addNumericField("min_dist", 2, 0)
   	gd.showDialog()
+	ch1Name = gd.getNextString()
+	ch2Name = gd.getNextString()
 	Channel_1 = gd.getNextNumber()
 	Channel_2 = gd.getNextNumber()
 	#radius_background = gd.getNextNumber()
@@ -46,9 +51,9 @@ def getOptions(): # in pixels
   	min_dist = gd.getNextNumber()
 
   	# return int(Channel_1), int(Channel_2), radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
-	return int(Channel_1), int(Channel_2), sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
+	return ch1Name, ch2Name, int(Channel_1), int(Channel_2), sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist
 
-def extract_channel(imp_max, Channel_1, Channel_2):
+def extract_channel(imp_max, ch1Name, ch2Name, Channel_1, Channel_2):
 
 	stack = imp_max.getImageStack()
 	ch_1 = ImageStack(imp_max.width, imp_max.height)
@@ -57,8 +62,8 @@ def extract_channel(imp_max, Channel_1, Channel_2):
 	ch_2 = ImageStack(imp_max.width, imp_max.height)
 	ch_2.addSlice(str(Channel_2), stack.getProcessor(Channel_2))
 
-	ch1 = ImagePlus("FUS" + str(Channel_1), ch_1)
-	ch2 = ImagePlus("DNAJB6" + str(Channel_2), ch_2)
+	ch1 = ImagePlus(ch1Name + str(Channel_1), ch_1)
+	ch2 = ImagePlus(ch2Name + str(Channel_2), ch_2)
 
 	ch1_1 = ch1.duplicate()
 	ch2_1 = ch2.duplicate()
@@ -68,7 +73,7 @@ def extract_channel(imp_max, Channel_1, Channel_2):
 
 	return ip1, ip2
 
-# Background subtraction
+# Background subtraction and contrast enhancement
 def back_subtraction(ip1, ip2, radius_background):
 	bgs=BackgroundSubtracter()
 	bgs.rollingBallBackground(ip1, radius_background, False, False, True, True, True)
@@ -83,21 +88,23 @@ def back_subtraction(ip1, ip2, radius_background):
 
 def find_peaks(imp1, imp2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2):
 	# FIND PEAKS
-	# sigmaSmaller ==> Size of the smaller dots (in pixels)
-	# sigmaLarger ==> Size of the bigger dots (in pixels)
+	# sigmaSmaller ==> Size of the smaller dots (in calibrated units)
+	# sigmaLarger ==> Size of the bigger dots (in calibrated units)
 	# minPeakValue ==> Intensity above which to look for dots
 	
-	# Preparation FUS channel
+	# Preparation first channel 
 	ip1_1 = IL.wrapReal(imp1)
 	ip1E = Views.extendMirrorSingle(ip1_1)
 	imp1.show()
 
-	#Preparation DNAJB6 channel
+	#Preparation second channel
 	ip2_1 = IL.wrapReal(imp2)
 	ip2E = Views.extendMirrorSingle(ip2_1)
 	imp2.show()
 
-	calibration = [1.0 for i in range(ip1_1.numDimensions())]
+	# calibration = [1.0 for i in range(ip1_1.numDimensions())]
+	cal = imp1.getCalibration()
+	calibration = [cal.pixelWidth]
 	extremaType = DogDetection.ExtremaType.MINIMA
 	normalizedMinPeakValue = False
 
@@ -124,18 +131,18 @@ def run():
 
 
 	#Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
-	Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
+	ch1Name, ch2Name, Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist = getOptions()
 	
 
 	IJ.log("options used:" \
-    		+ "\n" + "channel 1:" + str(Channel_1) \
-    		+ "\n" + "channel 2:"+ str(Channel_2) \
+    		+ "\n" + "channel 1:" + ch1Name + ", " + str(Channel_1) \
+    		+ "\n" + "channel 2:" + ch2Name + ", " + str(Channel_2) \
     		# + "\n" + "Radius Background:"+ str(radius_background) \
-    		+ "\n" + "Smaller Sigma:"+ str(sigmaSmaller) \
-    		+ "\n" + "Larger Sigma:"+str(sigmaLarger) \
+    		+ "\n" + "Smaller Sigma in um:"+ str(sigmaSmaller) \
+    		+ "\n" + "Larger Sigma in um:"+str(sigmaLarger) \
     		+ "\n" + "Min Peak Value Ch1:"+str(minPeakValueCh1) \
 			+ "\n" + "Min Peak Value Ch2:"+str(minPeakValueCh2) \
-    		+ "\n" + "Min dist between peaks:"+str(min_dist))
+    		+ "\n" + "Min dist between peaks in pixels:"+str(min_dist))
 
 	IJ.log("Computing Max Intensity Projection")
 
@@ -146,9 +153,9 @@ def run():
 	else:
 		imp_max = imp
 
-	ip1, ip2 = extract_channel(imp_max, Channel_1, Channel_2)
-	imp1 = ImagePlus("ch1", ip1)
-	imp2 = ImagePlus("ch2", ip2)
+	ip1, ip2 = extract_channel(imp_max, ch1Name, ch2Name, Channel_1, Channel_2)
+	imp1 = ImagePlus(ch1Name, ip1)
+	imp2 = ImagePlus(ch2Name, ip2)
 	# imp1, imp2 = back_subtraction(ip1, ip2, radius_background)
 	imp1.show()
 	imp2.show()
@@ -215,34 +222,33 @@ def run():
 	rm.addRoi(roi_4)
 
 	rm.select(0)
-	rm.rename(0, "ROI FUS")
+	rm.rename(0, "ROI %s" %(ch1Name))
 	rm.runCommand("Set Color", "yellow")
 
 	rm.select(1)
-	rm.rename(1, "ROI DNAJB6")
+	rm.rename(1, "ROI %s" %(ch2Name))
 	rm.runCommand("Set Color", "blue")
 
 	rm.select(2)
-	rm.rename(2, "ROI DNAJB6 touching FUS")
+	rm.rename(2, "ROI %s touching %s" %(ch2Name, ch1Name))
 	rm.runCommand("Set Color", "red")
 
 	rm.select(3)
-	rm.rename(3, "ROI FUS touching DNAJB6")
+	rm.rename(3, "ROI %s touching %s" %(ch1Name, ch2Name))
 	rm.runCommand("Set Color", "green")
 
 	rm.runCommand(imp1, "Show All")
 
-	#Change distance to be in um
+	# convert user-supplied distance in pixels to calibrated units for results
 	cal = imp.getCalibration()
 	min_distance = str(round((cal.pixelWidth * min_dist),1))
 
 	table = ResultsTable()
 	table.incrementCounter()
-	table.addValue("Number of FUS Markers", roi_1.getCount(0))
-	table.addValue("Number of DNAJB6 Markers", roi_2.getCount(0))
-	table.addValue("Number of DNAJB6 within %s um of FUS" %(min_distance), roi_3.getCount(0))
-	table.addValue("Number of FUS within %s um of DNAJB6" %(min_distance), roi_4.getCount(0))
-
+	table.addValue("Number of %s Markers" %(ch1Name), roi_1.getCount(0))
+	table.addValue("Number of %s Markers" %(ch2Name), roi_2.getCount(0))
+	table.addValue("Number of %s within %s um of %s" %(ch2Name, min_distance, ch1Name), roi_3.getCount(0))
+	table.addValue("Number of %s within %s um of %s" %(ch1Name, min_distance, ch2Name), roi_4.getCount(0))
 	table.show("Results of Analysis")
 
 run()
