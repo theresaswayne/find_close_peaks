@@ -287,7 +287,7 @@ def run():
         continue
       #process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
       process(srcDir, dstDir, root, filename, keepDirectories, ch1Name, ch2Name, Channel_1, Channel_2, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
-
-
+  IJ.log("Done!")
 
 run()
+
