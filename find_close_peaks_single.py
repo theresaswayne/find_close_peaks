@@ -33,8 +33,8 @@ def getOptions(): # in pixels
 	gd.addNumericField("Channel number for first channel", 3, 0)
 	gd.addNumericField("Channel number for second channel", 2, 0)
 	#gd.addNumericField("radius_background", 100, 0)
- 	gd.addNumericField("Min peak width (sigma) in calibrated units", 0.5, 1)
- 	gd.addNumericField("Max peak width (sigma) in calibrated units", 5.0, 1)
+ 	gd.addNumericField("Min peak width (sigma) in calibrated units", 0.5, 2)
+ 	gd.addNumericField("Max peak width (sigma) in calibrated units", 5.0, 2)
   	gd.addNumericField("minPeakValue first channel", 40, 0)
   	gd.addNumericField("minPeakValue second channel", 15, 0)
   	gd.addNumericField("min_dist", 2, 0)
@@ -241,7 +241,7 @@ def run():
 
 	# convert user-supplied distance in pixels to calibrated units for results
 	cal = imp.getCalibration()
-	min_distance = str(round((cal.pixelWidth * min_dist),1))
+	min_distance = str(round((cal.pixelWidth * min_dist),3))
 
 	table = ResultsTable()
 	table.incrementCounter()
