@@ -1,5 +1,5 @@
-# ROI_to_mask_single.py
-# Given an ROI in the manager, and a multichannel single-slice image, measure the mask area, create a mask and save the data and mask
+# ROI_to_mask_batch.py
+# Given a folder of ROI Manager sets (.roi) and multichannel single-slice images of the same name, measure the mask area, create a mask and save the data and mask
 
 # ---- Import packages
 
@@ -30,8 +30,7 @@ def run():
 	rm.reset()
 
 	# obtain an image
-	#imp = IJ.openImage("http://imagej.net/images/blobs.gif");
-	imp = IJ.createImage("HyperStack", "8-bit grayscale-mode label", 300, 256, 4, 1, 1);
+	imp = IJ.openImage("http://imagej.net/images/blobs.gif");
 
 	# create an ROI and add to manager
 	imp.setRoi(108,33,70,117);
