@@ -1,13 +1,23 @@
+#@ File	(label = "Input directory", style = "directory") srcFile
+#@ File	(label = "Output directory", style = "directory") dstFile
+#@ String  (label = "Image file extension", value=".czi") ext
+#@ String  (label = "File name contains", value = "") containString
+#@ boolean (label = "Keep directory structure when saving", value = true) keepDirectories
+
 # ROI_to_mask_batch.py
 # Given a folder of ROI Manager sets (.roi) and multichannel single-slice images of the same name, measure the mask area, create a mask and save the data and mask
 
 # ---- Import packages
 
 from ij import IJ, ImagePlus, ImageStack
+from ij.plugin import ZProjector
 from ij.plugin.filter import RankFilters
 import net.imagej.ops
 from net.imglib2.view import Views
 from net.imglib2.img.display.imagej import ImageJFunctions as IL
+from jarray import zeros
+import os
+from loci.plugins import BF
 from ij.process import ImageStatistics as IS
 from ij.gui import Roi, PointRoi
 from jarray import zeros
@@ -19,31 +29,39 @@ from ij.gui import GenericDialog
 
 # ---- Define functions
 
-# def -- 
+def process(srcDir, dstDir, currentDir, fileName, keepDirectories):
 
-def run():
-
-	# setup: clear ROI Mgr
+	# setup
+	IJ.run("Close All", "")
 	rm = RoiManager.getInstance()
 	if not rm:
-	  rm = RoiManager()
+		rm = RoiManager()
 	rm.reset()
 
-	# obtain an image
-	imp = IJ.openImage("http://imagej.net/images/blobs.gif");
+	# open the image
+	IJ.log("Opening image file:" + fileName)
+	#imp = IJ.openImage(os.path.join(currentDir, fileName))
+	#imp = IJ.getImage()
+	imp = BF.openImagePlus(os.path.join(currentDir, fileName))
+	imp = imp[0]
 
-	# create an ROI and add to manager
-	imp.setRoi(108,33,70,117);
-	roi = imp.getRoi()
-	rm.addRoi(roi);
+	# open the ROI set (assumes single roi)
+	baseFileName = os.path.splitext(os.path.basename(fileName))[0]
+	roiFileName = baseFileName + ".roi"
+	IJ.log("Opening roi file:" + roiFileName)
+	#TODO: Check if it exists!
+	rm.open(os.path.join(currentDir, roiFileName))
 	
-	# measure the area of the ROI
+	# activate and measure the ROI
 	rm.select(0);
+	roi = imp.getRoi()
 	rm.runCommand(imp,"Measure");
 	stats = imp.getStatistics(IS.AREA)
 	IJ.log("area: %s" %(stats.area))
+	# TODO: Add to a single CSV table for saving
 
 	# create the mask and show it
+	rm.select(0);
 	mask = imp.createRoiMask()
 	maskImp = ImagePlus("Mask", mask)
 	maskImp.show()
@@ -51,8 +69,35 @@ def run():
 	# change values from 0,255 to 0,1 and display in a good LUT
 	IJ.run(maskImp, "Divide...", "value=255");
 	IJ.run(maskImp, "glasbey_inverted", "display=Mask")
+
+	# save the mask
+	saveDir = currentDir.replace(srcDir, dstDir) if keepDirectories else dstDir
+	if not os.path.exists(saveDir):
+		os.makedirs(saveDir)
+	IJ.saveAs(maskImp, "Tiff", os.path.join(saveDir, baseFileName +"_Mask.tif"))
+
+def run():
+
+	srcDir = srcFile.getAbsolutePath()
+	dstDir = dstFile.getAbsolutePath()
+	IJ.log("\\Clear")
+	IJ.log("Processing batch ROI masking")
+	
+	# Traverse directories
+	for root, directories, filenames in os.walk(srcDir):
+		filenames.sort();
+		for filename in filenames:
+			# Check for file extension
+			if not filename.endswith(ext):
+				continue
+			# Check for file name pattern
+			if containString not in filename:
+				continue
+			#process(srcDir, dstDir, root, filename, keepDirectories, Channel_1, Channel_2, radius_background, sigmaSmaller, sigmaLarger, minPeakValueCh1, minPeakValueCh2, min_dist)
+			process(srcDir, dstDir, root, filename, keepDirectories)
 	
 	IJ.log("Done")
 
 # ---- Run
+
 run()
