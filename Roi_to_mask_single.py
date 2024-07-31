@@ -1,6 +1,5 @@
 # ROI_to_mask_single.py
 # Given an ROI in the manager, and a multichannel single-slice image, measure the mask area, create a mask and save the data and mask
-# Image must be open
 
 # ---- Import packages
 
@@ -9,6 +8,7 @@ from ij.plugin.filter import RankFilters
 import net.imagej.ops
 from net.imglib2.view import Views
 from net.imglib2.img.display.imagej import ImageJFunctions as IL
+from ij.process import ImageStatistics as IS
 from ij.gui import Roi, PointRoi
 from jarray import zeros
 from ij.measure import ResultsTable
@@ -36,6 +36,12 @@ def run():
 	imp.setRoi(108,33,70,117);
 	roi = imp.getRoi()
 	rm.addRoi(roi);
+	
+	# measure the area of the ROI
+	rm.select(0);
+	rm.runCommand(imp,"Measure");
+	stats = imp.getStatistics(IS.AREA)
+	IJ.log("area: %s" %(stats.area))
 
 	# create the mask and show it
 	mask = imp.createRoiMask()
