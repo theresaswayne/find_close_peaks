@@ -5,7 +5,8 @@
 #@ boolean (label = "Keep directory structure when saving", value = true) keepDirectories
 
 # ROI_to_mask_batch.py
-# Given a folder of ROI Manager sets (.roi) and multichannel single-slice images of the same name, measure the mask area, create a mask and save the data and mask
+# Given a folder of ROI Manager sets (.roi) and multichannel single-slice images of the same name,
+#   save the masks and a table of the mask areas
 
 # ---- Import packages
 
@@ -49,6 +50,9 @@ def process(srcDir, dstDir, currentDir, fileName, keepDirectories):
 	baseFileName = os.path.splitext(os.path.basename(fileName))[0]
 	roiFileName = baseFileName + ".roi"
 	IJ.log("Opening roi file:" + roiFileName)
+	if not os.path.exists(os.path.join(currentDir, roiFileName)):
+		IJ.log("ROI File does not exist!")
+		return
 	#TODO: Check if it exists!
 	rm.open(os.path.join(currentDir, roiFileName))
 	
